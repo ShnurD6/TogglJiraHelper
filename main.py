@@ -1,9 +1,10 @@
+import re
 from datetime import datetime, timedelta
 
 import requests
 from base64 import b64encode
 
-from credentials import TOGGL_LOGIN, TOGGL_PASSWORD
+from credentials import TOGGL_LOGIN, TOGGL_PASSWORD, JIRA_DOMAIN
 
 
 class Worklog:
@@ -54,6 +55,9 @@ def get_sorted_aggregated_time_points(
             'end_date': end
         })
 
+    if data.status_code != 200:
+        raise Exception(f"Code: {data.status_code}, Error: {data.json()}")
+
     sorted_aggregated_wls = {}
     for worklog in data.json():
         wl_class = Worklog(
@@ -69,9 +73,24 @@ def get_sorted_aggregated_time_points(
     return sorted(sorted_aggregated_wls.values(), key=lambda wl: wl.last_time, reverse=True)
 
 
+def get_link_by_description(description: str):
+    # Try search task number
+    match = re.search(r'((?:COR|CON|FRONT|WEB|SUP|TESTS|ORG).\d{1,6})', description)
+    if match is not None:
+        return f"https://{JIRA_DOMAIN}.atlassian.net/browse/{match.group(0)}"
+    # Try search StandUps / Retro / DEMO / Backlog / 1n1
+    if re.search(
+            r'(standup|retro|status|ретро|организационные|demo|backlog|беклог|1n1)',
+            description.lower()) is not None:
+        return f"https://{JIRA_DOMAIN}.atlassian.net/browse/ORG-7"
+    # Try search Interview
+    if re.search(r'(собеседование|собес|кандидат|тестов|отклик)', description.lower()) is not None:
+        return f"https://{JIRA_DOMAIN}.atlassian.net/browse/ORG-2"
+
+
 def run():
     for wl in get_sorted_aggregated_time_points():
-        print(f"Description: {wl.description}, Duration: {format_time(wl.duration)}")
+        print(f"{format_time(wl.duration)}\t|\tLink: {get_link_by_description(wl.description)}\t| {wl.description} \t")
 
 
 if __name__ == "__main__":
