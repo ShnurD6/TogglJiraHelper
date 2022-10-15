@@ -5,6 +5,7 @@ import requests
 from base64 import b64encode
 
 from credentials import TOGGL_LOGIN, TOGGL_PASSWORD, JIRA_DOMAIN
+from jira_wl_updater import jira_add_wl
 
 
 class Worklog:
@@ -65,6 +66,9 @@ def get_sorted_aggregated_time_points(
             duration=int(worklog['duration']),
             last_time=worklog['stop'])
 
+        if wl_class.last_time is None:
+            continue
+
         if wl_class.description in sorted_aggregated_wls.keys():
             sorted_aggregated_wls[wl_class.description] += wl_class
         else:
@@ -73,24 +77,45 @@ def get_sorted_aggregated_time_points(
     return sorted(sorted_aggregated_wls.values(), key=lambda wl: wl.last_time, reverse=True)
 
 
-def get_link_by_description(description: str):
+def get_key_by_description(description: str):
     # Try search task number
-    match = re.search(r'((?:COR|CON|FRONT|WEB|SUP|TESTS|ORG).\d{1,6})', description)
+    match = re.search(r'((?:COR|CON|FRONT|WEB|SUP|TESTS|ORG|ARC).\d{1,6})', description)
     if match is not None:
-        return f"https://{JIRA_DOMAIN}.atlassian.net/browse/{match.group(0)}"
+        return f"{match.group(0)}"
     # Try search StandUps / Retro / DEMO / Backlog / 1n1
     if re.search(
-            r'(standup|retro|status|ретро|организационные|demo|backlog|беклог|1n1)',
+            r'(standup|retro|status|ретро|организационные|demo|демо|backlog|беклог|1n1)',
             description.lower()) is not None:
-        return f"https://{JIRA_DOMAIN}.atlassian.net/browse/ORG-7"
+        return f"ORG-7"
     # Try search Interview
     if re.search(r'(собеседование|собес|кандидат|тестов|отклик)', description.lower()) is not None:
-        return f"https://{JIRA_DOMAIN}.atlassian.net/browse/ORG-2"
+        return f"ORG-2"
+
+
+def get_link_by_description(description: str):
+    parsed_key = get_key_by_description(description)
+    if parsed_key:
+        return f"https://{JIRA_DOMAIN}.atlassian.net/browse/{parsed_key}"
+
+
+def convert_timestamp_from_toggle_to_jira(ts: str) -> str:
+    return datetime.strptime(ts, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000+0000")
 
 
 def run():
     for wl in get_sorted_aggregated_time_points():
-        print(f"{format_time(wl.duration)}\t|\tLink: {get_link_by_description(wl.description)}\t| {wl.description} \t")
+        print(f"{format_time(wl.duration)}\t"
+              f"|\tLink: {get_link_by_description(wl.description)}\t"
+              f"| {wl.description} \t "
+              f"| {wl.last_time}")
+        key = get_key_by_description(wl.description)
+        if key is None:
+            key = input(f"Input key (predicted: {key}): ")
+        jira_add_wl(
+            key,
+            time_seconds=wl.duration,
+            begin_time=convert_timestamp_from_toggle_to_jira(wl.last_time),
+            description=input("Input WL:"))
 
 
 if __name__ == "__main__":
