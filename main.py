@@ -79,7 +79,7 @@ def get_sorted_aggregated_time_points(
 
 def get_key_by_description(description: str):
     # Try search task number
-    match = re.search(r'((?:COR|CON|FRONT|WEB|SUP|TESTS|ORG|AGG|ARC).\d{1,6})', description)
+    match = re.search(r'((?:COR|CON|FRONT|WEB|SUP|BUS|TESTS|ORG|AGG|ARC).\d{1,6})', description)
     if match is not None:
         return f"{match.group(0)}"
     # Try search StandUps / Retro / DEMO / Backlog / 1n1
