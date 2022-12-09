@@ -1,11 +1,13 @@
 import re
+from base64 import b64encode
 from datetime import datetime, timedelta
+from http import HTTPStatus
 
 import requests
-from base64 import b64encode
 
-from credentials import TOGGL_LOGIN, TOGGL_PASSWORD, JIRA_DOMAIN
-from jira_wl_updater import jira_add_wl
+from credentials import JIRA_DOMAIN, TOGGL_LOGIN, TOGGL_PASSWORD
+
+jira_team_pattern = r'((?:COR|CON|FRONT|WEB|SUP|BUS|TESTS|ORG|AGG|ARC).\d{1,6})'
 
 
 class Worklog:
@@ -40,7 +42,7 @@ def format_time(sum_time_in_seconds):
     hours = (sum_time_in_seconds // 60 // 60) % 60
     if hours:
         result = f"{hours}h " + result
-    return result
+    return result if result else "0s"
 
 
 def get_sorted_aggregated_time_points(
@@ -57,7 +59,8 @@ def get_sorted_aggregated_time_points(
         })
 
     if data.status_code != 200:
-        raise Exception(f"Code: {data.status_code}, Error: {data.json()}")
+        raise Exception(f"Code: {data.status_code} ({HTTPStatus(data.status_code).phrase}), "
+                        f"Error: {data.json() if data.text else None}")
 
     sorted_aggregated_wls = {}
     for worklog in data.json():
@@ -77,9 +80,13 @@ def get_sorted_aggregated_time_points(
     return sorted(sorted_aggregated_wls.values(), key=lambda wl: wl.last_time, reverse=True)
 
 
+def get_description_without_jira_key(description: str):
+    return re.sub(jira_team_pattern, "", description)
+
+
 def get_key_by_description(description: str):
     # Try search task number
-    match = re.search(r'((?:COR|CON|FRONT|WEB|SUP|BUS|TESTS|ORG|AGG|ARC).\d{1,6})', description)
+    match = re.search(jira_team_pattern, description)
     if match is not None:
         return f"{match.group(0)}"
     # Try search StandUps / Retro / DEMO / Backlog / 1n1
@@ -100,23 +107,3 @@ def get_link_by_description(description: str):
 
 def convert_timestamp_from_toggle_to_jira(ts: str) -> str:
     return datetime.strptime(ts, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%dT%H:%M:%S.000+0000")
-
-
-def run():
-    for wl in get_sorted_aggregated_time_points():
-        print(f"{format_time(wl.duration)}\t"
-              f"|\tLink: {get_link_by_description(wl.description)}\t"
-              f"| {wl.description} \t "
-              f"| {wl.last_time}")
-        key = get_key_by_description(wl.description)
-        if key is None:
-            key = input(f"Input key (predicted: {key}): ")
-        jira_add_wl(
-            key,
-            time_seconds=wl.duration,
-            begin_time=convert_timestamp_from_toggle_to_jira(wl.last_time),
-            description=input("Input WL:"))
-
-
-if __name__ == "__main__":
-    run()
