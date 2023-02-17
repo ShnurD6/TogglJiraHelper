@@ -1,9 +1,12 @@
+import webbrowser
+import PySimpleGUI as sg
+
 from common import format_time, get_link_by_description, get_key_by_description, get_description_without_jira_key, \
     get_sorted_aggregated_time_points, convert_timestamp_from_toggle_to_jira
+from credentials import JIRA_DOMAIN
 from jira_wl_updater import jira_add_wl
 from screeninfo import get_monitors
 
-import PySimpleGUI as sg
 
 font = ("Helvetica", 20)
 
@@ -67,29 +70,34 @@ def run():
     current_layout = get_current_layout(current_wl)
 
     while True:
-        window = Window('Toggle Jira Helper', current_layout)
-        event, values = window.read()
-        if event == sg.WIN_CLOSED or event == 'Cancel':
-            # if user closes window or clicks cancel
+        try:
+            window = Window('Toggle Jira Helper', current_layout)
+            event, values = window.read()
+            if event == sg.WIN_CLOSED or event == 'Cancel':
+                # if user closes window or clicks cancel
+                break
+            if event == 'Save key':
+                entered_key = values[0]
+                current_layout = get_current_layout(current_wl, entered_key)
+            elif event == '+1m':
+                current_wl.duration += 60
+                current_layout = get_current_layout(current_wl, entered_key)
+            elif event == 'Re-enter key':
+                current_layout = get_current_layout(current_wl, "")
+            elif event == 'Log':
+                jira_add_wl(
+                    entered_key or get_key_by_description(current_wl.description),
+                    time_seconds=current_wl.duration,
+                    begin_time=convert_timestamp_from_toggle_to_jira(current_wl.last_time),
+                    description=values[0])
+                entered_key = None
+                current_wl = next(wl_iter)
+                current_layout = get_current_layout(current_wl, entered_key)
+            window.close()
+        except StopIteration:
+            print('Все WL за сегодня списаны!')
+            webbrowser.open(f'https://{JIRA_DOMAIN}.atlassian.net/jira/dashboards/last-visited')
             break
-        if event == 'Save key':
-            entered_key = values[0]
-            current_layout = get_current_layout(current_wl, entered_key)
-        elif event == '+1m':
-            current_wl.duration += 60
-            current_layout = get_current_layout(current_wl, entered_key)
-        elif event == 'Re-enter key':
-            current_layout = get_current_layout(current_wl, "")
-        elif event == 'Log':
-            jira_add_wl(
-                entered_key or get_key_by_description(current_wl.description),
-                time_seconds=current_wl.duration,
-                begin_time=convert_timestamp_from_toggle_to_jira(current_wl.last_time),
-                description=values[0])
-            entered_key = None
-            current_wl = next(wl_iter)
-            current_layout = get_current_layout(current_wl, entered_key)
-        window.close()
 
 
 if __name__ == "__main__":
