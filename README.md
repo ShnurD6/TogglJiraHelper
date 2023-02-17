@@ -4,7 +4,7 @@
 The program takes the time logs from the Toggle API for the last day and logs them to the Jira API.
 
 ## Install requirements
-`pip3 install -r reqirements.txt`
+`pip3 install -r requirements.txt`
 
 ## Launch console version
 JIRA_DOMAIN=X JIRA_LOGIN=X TOGGL_LOGIN=X TOGGL_PASSWORD=X JIRA_API_KEY=X python3 main_console.py
