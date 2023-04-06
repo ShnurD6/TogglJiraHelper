@@ -46,6 +46,7 @@ def get_current_layout(current_wl, entered_key=None):
               [sg.Text(f'Time: {format_time(current_wl.duration)}', font=font)]]
 
     if key:
+        key = key.strip()
         result += [[sg.Text(f'Key: {key}', font=font)],
                    [sg.Text('Enter WL:', font=font),
                     sg.InputText(
