@@ -46,7 +46,6 @@ def get_current_layout(current_wl, entered_key=None):
               [sg.Text(f'Time: {format_time(current_wl.duration)}', font=font)]]
 
     if key:
-        key = key.strip()
         result += [[sg.Text(f'Key: {key}', font=font)],
                    [sg.Text('Enter WL:', font=font),
                     sg.InputText(
@@ -78,7 +77,7 @@ def run():
                 # if user closes window or clicks cancel
                 break
             if event == 'Save key':
-                entered_key = values[0]
+                entered_key = values[0].strip()
                 current_layout = get_current_layout(current_wl, entered_key)
             elif event == '+1m':
                 current_wl.duration += 60
