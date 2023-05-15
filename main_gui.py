@@ -12,7 +12,13 @@ font = ("Helvetica", 20)
 
 
 def get_default_screen_dimensions():
-    default_monitor = [monitor for monitor in get_monitors() if monitor.is_primary][0]
+    default_monitors = [monitor for monitor in get_monitors() if monitor.is_primary]
+    if len(default_monitors) == 0:
+        # Really strange situation...
+        print("Unable to detect monitor :(")
+        return 1920, 1080
+
+    default_monitor = default_monitors[0]
     screen_width, screen_height = default_monitor.width, default_monitor.height
     return screen_width, screen_height
 
