@@ -4,7 +4,7 @@ import PySimpleGUI as sg
 from common import format_time, get_link_by_description, get_key_by_description, get_description_without_jira_key, \
     get_sorted_aggregated_time_points, convert_timestamp_from_toggle_to_jira
 from credentials import JIRA_DOMAIN
-from jira_wl_updater import jira_add_wl
+from jira_wl_updater import jira_add_wl, jira_get_summary
 from screeninfo import get_monitors
 
 
@@ -46,7 +46,8 @@ def get_current_layout(current_wl, entered_key=None):
               [sg.Text(f'Time: {format_time(current_wl.duration)}', font=font)]]
 
     if key:
-        result += [[sg.Text(f'Key: {key}', font=font)],
+        summary = jira_get_summary(key)
+        result += [[sg.Text(f'Key: {key} ({summary})', font=font)],
                    [sg.Text('Enter WL:', font=font),
                     sg.InputText(
                         default_text=get_description_without_jira_key(current_wl.description), font=font)],
