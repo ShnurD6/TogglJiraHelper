@@ -1,3 +1,4 @@
+import json
 import re
 from base64 import b64encode
 from datetime import datetime, timedelta
@@ -7,8 +8,16 @@ import requests
 
 from credentials import JIRA_DOMAIN, TOGGL_LOGIN, TOGGL_PASSWORD
 
-jira_team_pattern = r'((?:COR|CON|FRONT|WEB|SUP|BUS|TESTS|ORG|AGG|ARC).\d{1,6})'
 
+def load_config(filename):
+    with open(filename, 'r') as file:
+        return json.load(file)
+
+
+config = load_config('config.json')
+projects_regexp_from_config = "|".join(config["teams"])
+assert projects_regexp_from_config.isupper()
+jira_key_pattern = rf'((?:{projects_regexp_from_config})' + r'.\d{1,6})'
 
 class Worklog:
     def __init__(self, description, duration, last_time):
@@ -81,22 +90,21 @@ def get_sorted_aggregated_time_points(
 
 
 def get_description_without_jira_key(description: str):
-    return re.sub(jira_team_pattern, "", description)
+    return re.sub(jira_key_pattern, "", description)
 
 
 def get_key_by_description(description: str):
-    # Try search task number
-    match = re.search(jira_team_pattern, description)
+    # Try search task keys
+    upper_description = description.upper()
+    match = re.search(jira_key_pattern, upper_description)
     if match is not None:
         return f"{match.group(0)}"
-    # Try search StandUps / Retro / DEMO / Backlog / 1n1
-    if re.search(
-            r'(standup|retro|status|ретро|организационные|demo|демо|backlog|беклог|1n1)',
-            description.lower()) is not None:
-        return f"ORG-7"
-    # Try search Interview
-    if re.search(r'(собеседование|собес|кандидат|тестов|отклик)', description.lower()) is not None:
-        return f"ORG-2"
+
+    # Try search description patterns
+    lower_description = description.lower()
+    for pattern in config['patterns']:
+        if re.search(pattern['regex'], lower_description):
+            return pattern['key']
 
 
 def get_link_by_description(description: str):

@@ -13,7 +13,9 @@ JIRA_DOMAIN=X JIRA_LOGIN=X TOGGL_LOGIN=X TOGGL_PASSWORD=X JIRA_API_KEY=X python3
 JIRA_DOMAIN=X JIRA_LOGIN=X TOGGL_LOGIN=X TOGGL_PASSWORD=X JIRA_API_KEY=X python3 main_gui.py
 
 ## Customization
-Find the `get_key_by_description` function in common.py and customize it for your needs if necessary.
-Don't forget to add the test to test.py!
+There is a config file for customizing the script: config.json. The file contains two key elements:
 
-The teams are listed in the jira_team_pattern variable in the same common.py file.
+teams: a list of commands used to generate a search pattern for tasks in JIRA.
+patterns: an array of objects, each of which contains a key (task key in JIRA) and a regex (regular expression for searching in the description).
+
+Examples of parsing descriptions from Toggle to Jira key are provided in the tests.py file. Don't forget to update it after editing the config!

@@ -22,8 +22,8 @@ class CommonTests(unittest.TestCase):
         self.assertEqual(get_key_by_description("COR Week Retro"), "ORG-7")
         self.assertEqual(get_key_by_description("Подготовка к 1n1 с Борисом"), "ORG-7")
         self.assertEqual(get_key_by_description("Mob Status"), "ORG-7")
-        self.assertEqual(get_key_by_description("Разбор беклога"), "ORG-7")
-        self.assertEqual(get_key_by_description("Смотрели с Валерой беклог"), "ORG-7")
+        self.assertEqual(get_key_by_description("Разбор беклога"), "ORG-23")
+        self.assertEqual(get_key_by_description("Смотрели с Валерой беклог"), "ORG-23")
 
         self.assertEqual(get_key_by_description("Собес с Алексеем"), "ORG-2")
         self.assertEqual(get_key_by_description("Вечернее собеседование"), "ORG-2")

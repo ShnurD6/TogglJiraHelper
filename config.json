@@ -1,0 +1,21 @@
+{
+  "teams": ["COR", "CON", "FRONT", "WEB", "SUP", "BUS", "TESTS", "ORG", "AGG", "ARC"],
+  "patterns": [
+    {
+      "key": "ORG-7",
+      "regex": "(standup|retro|status|ретро|организационные|demo|демо|1n1)"
+    },
+    {
+      "key": "ORG-23",
+      "regex": "(backlog|беклог)"
+    },
+    {
+      "key": "ORG-2",
+      "regex": "(собеседование|собес|кандидат|тестов|отклик)"
+    },
+    {
+      "key": "SUP-24683",
+      "regex": "(ssd-\\d*)"
+    }
+  ]
+}
